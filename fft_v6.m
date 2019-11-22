@@ -24,8 +24,9 @@ hold on
 % Vetor de índices em notação binária reversa
 index = bi2de(de2bi(0:N-1,log2(N),'left-msb'))+1;
 
-X_5 = x(index);                 % Entrada para algorítimo do Singleton
-X_temp = zeros(1,N);            % Armazena resultados parciais das camada
+X_5 = zeros(2,N);
+X_5(1,:) = x(index);                 % Entrada para algorítimo do Singleton
+%X_temp = zeros(1,N);            % Armazena resultados parciais das camada
 
 % Máscara de bits para cálculo do índice de W
 w_index_mask = N-1;                     % Set os log2(N) primeiros bits
@@ -34,21 +35,23 @@ w_index_mask = w_index_mask*2^camadas;  % Desloca de log2(N)-1 bits
 for c= 1:1:camadas
    for e = 1:2:N
         % Cálculos dos índices do elemento e dos W_N's
-        i_x_t = bitshift(e,-1)+1;
+        i_x = bitshift(e,-1)+1;
+        i_x_in = ~bitand(c,1)+1;
+        i_x_out = bitand(c,1)+1;
         i_w = bitshift(bitand(e,w_index_mask),-1)+1;
         
         % Cálculo das amostras pares e ímpares
-        X_temp(i_x_t)       = X_5(e)+W(i_w).*X_5(e+1);
-        X_temp(i_x_t+N_2)   = X_5(e)-W(i_w).*X_5(e+1);
+        X_5(i_x_out,i_x)       = X_5(i_x_in,e)+W(i_w).*X_5(i_x_in,e+1);
+        X_5(i_x_out,i_x+N_2)   = X_5(i_x_in,e)-W(i_w).*X_5(i_x_in,e+1);
    end
    % Apontando os valores de saída para serem novas entradas
-   X_5 = X_temp;
+   % X_5 = X_temp;
    % Desloca a máscara para direita
    w_index_mask = bitshift(w_index_mask,-1);
 end
 
 subplot(2,1,2)
-stem(f,abs(X_5)/N,'r')
+stem(f,abs(X_5(i_x_out,:))/N,'r')
 title('DFT calculada com implementação própria')
 xlabel('\omega (x\pi rads/amostra)')
 
