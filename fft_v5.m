@@ -1,47 +1,45 @@
 % Versão do Singleton (1969) utilizando laço for
 
-x = [1 5 3 -1 -2 -3 1 -9 1 1 1 1 1 1 1 1 0 0 0 0 2 2 2 2 3 3 3 3 4 4 4 4];
+%x = [1 5 3 -1 -2 -3 1 -9 1 1 1 1 1 1 1 1 0 0 0 0 2 2 2 2 3 3 3 3 4 4 4 4];
+t = -2:4/128:1.99999;x = 2*sin(6*pi*t)+8*sin(15*pi*t)+4*sin(10*pi/4*t);
 %x = [1 1 1 1 1 1 1 1];
 
 
+N = length(x);                  % Comprimento da amostra
+N_2 = N/2;                      % Metada do comprimento da amostra
+camadas = log2(N);              % Número de camadas 
+W = exp(1j*2*pi*[0:N_2-1]/N);   % W_N com valores de e^j2pik/N
+
+% Frequências digitais normalizadas para plot 
+f = [0:1:(N-1)]/N;
+
 X_0 = fft(x);
 subplot(2,1,1)
-stem(abs(X_0))
+stem(f,abs(X_0)/N,'k')
+title('DFT calculada com FFT do MATLAB')
+xlabel('\omega (x\pi rads/amostra)')
 hold on
 
 
-
-N = length(x);
-N_2 = N/2;
-camadas = log2(N);
-
-W = exp(1j*2*pi*[0:N_2-1]/N);
-
-% Vetor de índices
+% Vetor de índices em notação binária reversa
 index = bi2de(de2bi(0:N-1,log2(N),'left-msb'))+1;
 
-X_5 = x(index);
-
-% Vetor para armazenar resultados de cada camada
-X_temp = zeros(1,N);
+X_5 = x(index);                 % Entrada para algorítimo do Singleton
+X_temp = zeros(1,N);            % Armazena resultados parciais das camada
 
 % Máscara de bits para cálculo do índice de W
-w_index_mask = N-1; % Set os log2(N) primeiros bits
-w_index_mask = w_index_mask*2^camadas; % Desloca de log2(N)-1 bits
+w_index_mask = N-1;                     % Set os log2(N) primeiros bits
+w_index_mask = w_index_mask*2^camadas;  % Desloca de log2(N)-1 bits
 
-%index = reshape(index,[2,N/2]);
-X_temp = zeros(1,N);
-aux = 0;
 for c= 1:1:camadas
    for e = 1:2:N
-        [bitshift(e,-1) bitshift(e,-1)+N_2 e e+1 bitshift(bitand(e,w_index_mask),-1) w_index_mask]
+        % Cálculos dos índices do elemento e dos W_N's
         i_x_t = bitshift(e,-1)+1;
         i_w = bitshift(bitand(e,w_index_mask),-1)+1;
         
+        % Cálculo das amostras pares e ímpares
         X_temp(i_x_t)       = X_5(e)+W(i_w).*X_5(e+1);
         X_temp(i_x_t+N_2)   = X_5(e)-W(i_w).*X_5(e+1);
-%         X_temp(bitshift(e,-1)+1)	= X_4(e)+W(bitshift(bitand(e,w_index_mask),-1)+1).*X_4(e+1);
-%         X_temp(bitshift(e,-1)+N_2+1)= X_4(e)-W(bitshift(bitand(e,w_index_mask),-1)+1).*X_4(e+1);
    end
    % Apontando os valores de saída para serem novas entradas
    X_5 = X_temp;
@@ -50,6 +48,8 @@ for c= 1:1:camadas
 end
 
 subplot(2,1,2)
-stem(abs(X_5))
+stem(f,abs(X_5)/N,'r')
+title('DFT calculada com implementação própria')
+xlabel('\omega (x\pi rads/amostra)')
 
 hold off
