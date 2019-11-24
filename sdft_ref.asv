@@ -1,14 +1,20 @@
-x = [1 2 3 4 3 2 1 2 3 4 3 2 1 2 3 4 3 2 1 2 3 4 3 2 ];
+%x = [1 2 3 4 3 2 1 2 3 4 3 2 1 2 3 4 3 2 1 2 3 4 3 2 ];
+%x = randn(1,64*128)
+x = zeros(1,64*128);x
+%x = [1 2 3 4 1 2 3 4 1 2 3 4];
 
 N = length(x);
-M = 4;
-L = 2;
+M = 64;
+L = 4;
 
 % Quantidade de janelas calculadas
-Q = (N-M)/L;
-Xn_k = zeros(Q,N);
+Q = (N-M)/L+1;
+Xn_k = zeros(Q,M);
 
 
 for q = 1:1:Q
-    Xn_k(q,:)=x(((q-1)*L+1):q+M);
+    n_l = (q-1)*L+1;
+    Xn_k(q,:)=fft(x(n_l:n_l+M-1))/M;
 end
+
+HeatMap(abs(Xn_k))
