@@ -1,0 +1,14 @@
+x = [1 2 3 4 3 2 1 2 3 4 3 2 1 2 3 4 3 2 1 2 3 4 3 2 ];
+
+N = length(x);
+M = 4;
+L = 2;
+
+% Quantidade de janelas calculadas
+Q = (N-M)/L;
+Xn_k = zeros(Q,N);
+
+
+for q = 1:1:Q
+    Xn_k(q,:)=x(((q-1)*L+1):q+M);
+end
