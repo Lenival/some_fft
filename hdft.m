@@ -1,7 +1,7 @@
 clear;clc
 %% Define reference signal x and your DFT
-% x = [0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23];
-x =   [1 2 3 4 3 2 1 2 3 4 3  2  1  2  3  4  3  2  1  2  3  4  3  2 ];
+% x = [0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24];
+x =   [1 2 3 4 3 2 1 2 3 4 3  2  1  2  3  4  3  2  1  2  3  4  3  2  1];
 %x = randn(1,64*128);
 %x = 1:64*128;x(1:10*128) = sin(2*pi*x(1:10*128));
 %x = [1 2 3 4 1 2 3 4 1 2 3 4];
@@ -13,13 +13,17 @@ M = 8;
 L = 4;
 
 % Number of windows demanded
-Q = floor((N-M)/L+1);
+Q = floor((N-M)/L+1)+2;
 Xn_k = zeros(Q,M,2);
 
+% Initializing with zero pading from x(-M+1) until x(-1)
+Xn_k(1,:,1) = fft([zeros(1,M-1) x(1)]);
+Xn_k(2,:,1) = fft([zeros(1,M-L-1) x(1:1+L)]);
+
 % Matlab's FFT spectrogram
-for n = 1:1:Q
-    n_l = (n-1)*L+1;
-    Xn_k(n,:,1)=fft(x(n_l:n_l+M-1));
+for n = 3:1:Q
+    n_l = (n-1)*L+1
+    Xn_k(n,:,1)=fft(x(n_l-M+1:n_l));
 end
 
 
