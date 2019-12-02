@@ -9,8 +9,8 @@ x =  [1 2 3 4 3 2 1 2 3 4 3  2  1  2  3  4  3  2  1  2  3  4  3  2  1];
 %Fs = 2048;t = 0:1/Fs:2;x = sawtooth(2*pi*512*t,0.75);
 
 N = length(x);
-M = 8;            % Window length
-L = 4;            % Superposition length
+M = 11;            % Window length
+L = 8;            % Superposition length
 M_h = M-L;          % Size of window increment
 q_D = floor((M-1)/M_h);             % Number of UVT before the start window
 X_start = mod(M-1,M_h)+1;       % Start sample of UVT calculation
@@ -44,24 +44,29 @@ d = zeros(1,N);
 d(1:M) = x(1:M);
 d(M+1:N)=x(M+1:N)-x(1:N-M);
 
-D = zeros(Q,M);
+D = zeros(Q+q_D,M);
 % Calculating D_n[k] to x[-(M+L)] até x[0] with null initial conditions 
-D(0+1,0+1:M)=d(1:M_h).*exp(1j*2*pi*((0-L+1).*(0:M-1))./M);
+% D(0+1,0+1:M)=d(1:M_h).*exp(1j*2*pi*((0-L+1).*(0:M-1))./M);
 
 
-
-for k = 0:1:M-1         % q=0 is calculated before
-    for m = 0:1:L-1
-        D(1,k+1)=D(1,k+1)+d(L-m+1)*exp(1j*2*pi*((m-L+1)*k)/M);      % 
+for n_i = 1:1:q_D
+    n_x = X_start + (n_i-1)*M_h;      % Index n of x(n) window 
+    m_i = (n_x>=M)*(n_x-L)+1;
+    %m_f = n;
+    for k = 0:1:M-1         % q=0 is calculated before
+        for m = m_i:1:n_x     % Matlab index related to n-m HDFT index
+            D(n_i,k+1)=D(n_i,k+1)+d(m)*exp(1j*2*pi*(((n_x-m)-L+1)*k)/M);      % 
+        end
     end
 end
 
-
-for n_i = 2:1:Q
-    n = (n_i-1)*(M_h);
+for n_i = q_D+1:1:(Q+q_D)
+    n_x = X_start + (n_i-1)*M_h;      % Index n of x(n) window 
+    m_i = (n_x>=M)*(n_x-M)+1;
+    %m_f = n;
     for k = 0:1:M-1         % q=0 is calculated before
-        for m = 0:1:L-1
-            D(n_i,k+1)=D(n_i,k+1)+d(n-m+1)*exp(1j*2*pi*((m-L+1)*k)/M);      % 
+        for m = m_i:1:n_x     % Matlab index related to n-m HDFT index
+            D(n_i,k+1)=D(n_i,k+1)+d(m)*exp(1j*2*pi*(((n_x-m)-L+1)*k)/M);      % 
         end
     end
 end
@@ -69,11 +74,13 @@ end
 
 %% HDFT spectrogram
 
-% Do the first window
+% Doing the first window
 Xn_k(1,1:M,2)=exp(1j*(2*pi/M)*L*(0:M-1)).*D(1,0+1:M);
+Xn_k(q_D+1,1:M,2)=fft(x(1:1:M));
+
 
 % Processing the remaining windows
-for n_i = 2:1:Q        % n=0 is calculated before
+for n_i = q_D+2:1:(Q+q_D)        % n=0 is calculated before
     for k = 0:1:M-1
         %n_l = (n-1)*L+1;
         Xn_k(n_i,k+1,2)=exp(1j*(2*pi/M)*L*k)*(Xn_k(n_i-1,k+1,2)+D(n_i,k+1));
@@ -84,13 +91,13 @@ end
 %% Graph plot to compare results
 figure('units','normalized','outerposition',[0 0 1 1])
 subplot(1,2,1)
-surf(abs(Xn_k(:,:,1)))
+surf(abs(Xn_k(q_D+1:Q,:,1)))
 colormap(pink)    % change color map
 shading interp    % interpolate colors across lines and faces
 
 subplot(1,2,2)
 % stem(abs(fft(x)/N))
 % imagesc(abs(Xn_k(:,:,2)))
-surf(abs(Xn_k(:,:,2)))
+surf(abs(Xn_k(q_D+1:Q,:,2)))
 colormap(pink)    % change color map
 shading interp    % interpolate colors across lines and faces
