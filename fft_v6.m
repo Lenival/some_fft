@@ -1,8 +1,8 @@
 % Versão do Singleton (1969) utilizando laço for
-
+clear;clc;close all;
 %x = [1 5 3 -1 -2 -3 1 -9 1 1 1 1 1 1 1 1 0 0 0 0 2 2 2 2 3 3 3 3 4 4 4 4];
 %t = -2:4/512:1.99999;x = 2*sin(6*pi*t)+8*sin(15*pi*t)+4*sin(10*pi/4*t);
-x = randn(1,128);
+x = randn(1,2^3);
 %x = [0 0 1 1 0 1 0 1];
 
 
@@ -10,11 +10,13 @@ N = length(x);                  % Comprimento da amostra
 N_2 = N/2;                      % Metada do comprimento da amostra
 camadas = log2(N);              % Número de camadas 
 W = exp(-1j*2*pi*[0:N_2-1]/N);   % W_N com valores de e^j2pik/N
+tempos = [0 0 0];
 
 % Frequências digitais normalizadas para plot 
 f = [0:1:(N-1)]/N;
-
+tic
 X_0 = fft(x);
+tempos(1) = toc;
 close
 subplot(3,2,1)
 stem(f,abs(X_0)/N,'k')
@@ -26,7 +28,7 @@ stem(f,phase(X_0)/N,'k')
 title('Fase da FFT do MATLAB')
 xlabel('\omega (x\pi rads/amostra)')
 
-
+tic
 % Vetor de índices em notação binária reversa
 index = bi2de(de2bi(0:N-1,log2(N),'left-msb'))+1;
 
@@ -53,13 +55,16 @@ for c= 1:1:camadas
         X_5(i_x_out,i_x+N_2)   = X_5(i_x_in,e)-W(i_w).*X_5(i_x_in,e+1);
         
         %N_2^(c-1)+bitshift(e,-1)+1;
-        all_index(N_2*(c-1)+bitshift(e,-1)+1,1:6) = [c e i_x i_x_in i_x_out i_w ];
+        %all_index(N_2*(c-1)+bitshift(e,-1)+1,1:6) = [c e i_x i_x_in i_x_out i_w ];
    end
    % Apontando os valores de saída para serem novas entradas
    % X_5 = X_temp;
    % Desloca a máscara para direita
    w_index_mask = bitshift(w_index_mask,-1);
 end
+
+
+tempos(2) = toc;
 
 subplot(3,2,3)
 stem(f,abs(X_5(i_x_out,:))/N,'b')
@@ -71,7 +76,7 @@ stem(f,phase(X_5(i_x_out,:))/N,'b')
 title('Fase da implementação com dois loops')
 xlabel('\omega (x\pi rads/amostra)')
 
-
+tic
 X_5 = zeros(2,N);
 X_5(1,:) = x(index);                 % Entrada para algorítimo do Singleton
 
@@ -94,8 +99,11 @@ for g = 0:1:(camadas*N_2-1)
         X_5(i_x_out,i_x)       = X_5(i_x_in,e_o)+W(i_w).*X_5(i_x_in,e_e);
         X_5(i_x_out,i_x+N_2)   = X_5(i_x_in,e_o)-W(i_w).*X_5(i_x_in,e_e);
         
-        all_index(g+1,7:12) = [g_h+1 e_o i_x i_x_in i_x_out i_w ];
+        %all_index(g+1,7:12) = [g_h+1 e_o i_x i_x_in i_x_out i_w ];
 end
+
+
+tempos(3) = toc;
 
 subplot(3,2,5)
 stem(f,abs(X_5(i_x_out,:))/N,'r')
@@ -105,5 +113,8 @@ subplot(3,2,6)
 stem(f,phase(X_5(i_x_out,:))/N,'r')
 title('Fase da DFT implementada com 1 loop')
 xlabel('\omega (x\pi rads/amostra)')
+
+tempos
+
 
 hold off
