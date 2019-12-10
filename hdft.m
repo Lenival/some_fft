@@ -1,17 +1,17 @@
-%clear;clc
+clear;clc
 %% Define reference signal x and your DFT
 %x = [0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24];
-%x =  [1 2 3 4 3 2 1 2 3 4 3  2  1  2  3  4  3  2  1  2  3  4  3  2  1];
-x = randn(1,2^12);
-%Fs = 2^10;t = 0:1/Fs:2;x = 1+sin(2*pi*20*t);
+x =  [1 2 3 4 3 2 1 2 3 4 3  2  1  2  3  4  3  2  1  2  3  4  3  2  1];
+%x = randn(1,2^18);
+%Fs = 2^10;t = 0:1/Fs:2;x = 1+sin(2*pi*200*t);
 %x = [1 2 3 4 1 2 3 4 1 2 3 4];
 %Fs = 10e3;t = 0:1/Fs:2;x = vco(sawtooth(2*pi*t,0.5),[0.1 0.4]*Fs,Fs);
 %Fs = 2^16;t = 0:1/Fs:2;x = sawtooth(2*pi*512*t,0.75);
 %Fs = 2^6;t = 0:1/Fs:2;x = sawtooth(2*pi*512*t,0.75);
 
 N = length(x);
-M = 128;            % Window length
-L = 64;            % Size of window increment
+M = 8;            % Window length
+L = 2;            % Size of window increment
 S = M-L;          % Superposition length
 q_D = floor((M-1)/L);             % Number of UVT before the start window
 X_start = mod(M-1,L)+1;       % Start sample of UVT calculation
@@ -66,16 +66,14 @@ d(M+1:N)=x(M+1:N)-x(1:N-M);
 
 D = zeros(Q+q_D,M);
 % Calculating D_n[k] to x[-(M+L)] até x[0] with null initial conditions 
-% D(0+1,0+1:M)=d(1:M_h).*exp(1j*2*pi*((0-L+1).*(0:M-1))./M);
 
-% sum(d(1:5).*W_M_1.^(-(3:7)*0))
 for n_i = 1:1:q_D
     n_x = X_start + (n_i-1)*L;      % Index n of x(n) window 
     %m_i = (n_x>=M)*(n_x-L)+1;
     m_i = (n_x-L);
     m_i = (m_i>0)*m_i+1;            % Start in 1 for not positive index
     %m_f = n;
-    disp([m_i n_x])
+%    disp([m_i n_x])
     for k = 0:1:M-1         % q=0 is calculated before
         for m = m_i:1:n_x     % Matlab index related to n-m HDFT index
             D(n_i,k+1)=D(n_i,k+1)+d(m)*exp(1j*2*pi*(((n_x-m)-L+1)*k)/M);
@@ -88,11 +86,10 @@ for n_i = q_D+1:1:(Q+q_D)
     n_x = M+(n_i-q_D-1)*L;
     m_i = (n_x-L)+1;
     %m_f = n;
-    disp([m_i n_x])
+%    disp([m_i n_x])
     for k = 0:1:M-1         % q=0 is calculated before
         for m = m_i:1:n_x     % Matlab index related to n-m HDFT index
             D(n_i,k+1)=D(n_i,k+1)+d(m)*exp(1j*2*pi*(((n_x-m)-L+1)*k)/M); 
-            %exponentials = [exponentials exp(1j*2*pi*(((n_x-m)-L+1)*k)/M)];% 
         end
     end
 end
@@ -102,22 +99,18 @@ end
 
 % Doing the first window
 Xn_k(1,1:M,2)=exp(1j*(2*pi/M)*L*(0:M-1)).*D(1,0+1:M);
-%Xn_k(q_D,1:M,2)= Xn_k(q_D,1:M,1);%Xn_k(2,1:M,2)= Xn_k(2,1:M,1);
-%exponentials = [exponentials exp(1j*(2*pi/M)*L*(0:M-1))];
-%Xn_k(q_D+1,1:M,2)=fft(x(1:1:M));
-
 
 % Processing the remaining windows
 for n_i = 2:1:(Q+q_D)        % n=0 is calculated before
     for k = 0:1:M-1
         %n_l = (n-1)*L+1;
         Xn_k(n_i,k+1,2)=exp(1j*(2*pi/M)*L*k)*(Xn_k(n_i-1,k+1,2)+D(n_i,k+1));
-        %exponentials = [exponentials exp(1j*(2*pi/M)*L*k)];
     end
 end
 
 D_diff = D - D_reff;
 Diff_Xn_k = Xn_k(:,:,1)-Xn_k(:,:,2);
+
 %% Graph plot to compare results
 disp('-------------plots--------------')
 
@@ -143,7 +136,7 @@ colormap(pink)    % change color map
 shading interp    % interpolate colors across lines and faces
 
 figure
-mesh(abs(Diff_Xn_k(q_D:Q+q_D,:)))
+mesh(abs(Diff_Xn_k(1:Q+q_D,:)))
 zlabel('\epsilon')
 xlabel('n')
 ylabel('k')
